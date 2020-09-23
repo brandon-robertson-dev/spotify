@@ -19,37 +19,61 @@ const tokeniser = (sentence)=>{
 const spellChecker = (words)=>{
     const spellcheck = new natural.Spellcheck(emotions)
     const moods = spellcheck.getCorrections((words.slice(0, 2)),2);
-    console.log(`Your mood is ${moods[0]}`)
+    if (moods[0]==null){
+        const hacky = emotions[Math.floor(Math.random() * (emotions.length-1))]
+        return hacky;
+    }
     return moods[0];
 }
 
 const antonymFinder = (word)=>{
-    if(!word){
-        word = emotions[Math.floor(Math.random() * (emotions.length-1))]
-    }
+    const thesaurus = new Backend();
+    thesaurus.setBaseUrl("https://api.datamuse.com/words?rel_ant=")
+    return thesaurus.get(`${word}&max=3`)
+    .then(data=>showAntonyms(data, word))
+    .catch(console.log);
+}
+
+const continuedAntonymFinder = (word)=>{
     const thesaurus = new Backend();
     thesaurus.setBaseUrl("https://www.dictionaryapi.com/api/v3/references/thesaurus/json")
     return thesaurus.get(`/${word}?key=${key.api}`)
     .then(data=> data[0]["meta"]["ants"])
-    .then(data=>showAntonyms(data))
-    .catch(console.log);
+    .then(data=>showTheseOnesTho(data))
+    .catch(console.log)
 }
 
-const showAntonyms = (data)=>{
+const showAntonyms = (data, word)=>{
+    try{
+        if(data.length<1){
+            // continuedAntonymFinder(word)
+            return word;
+        }
+        else {
+            return data[0].word;
+        }
+    }
+    catch(err){
+        console.log(err);
+    }   
+}
+
+const showTheseOnesTho = (data)=>{
     try{
         if(data.length<1){
         throw "There's no opposite to that feeling"
     }
     randomIndex = Math.floor(Math.random() * data.length)
-    return data[randomIndex][(Math.floor(Math.random() * data[randomIndex].length))];
+    const newData = data[randomIndex][(Math.floor(Math.random() * data[randomIndex].length))];
+    return newData;
 }
     catch(err){
         console.log(err);
     }   
 }
 
-
+// antonymFinder("angry");
 
 module.exports = {
-    tokeniser, spellChecker, antonymFinder
+    tokeniser, spellChecker, antonymFinder, continuedAntonymFinder
 }
